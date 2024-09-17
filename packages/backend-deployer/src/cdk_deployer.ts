@@ -321,7 +321,12 @@ export class CDKDeployer implements BackendDeployer {
       cdkCommandArgs.push(...additionalArguments);
     }
 
-    return await this.executeCommand(cdkCommandArgs);
+    const cdkout = await this.executeCommand(cdkCommandArgs);
+    if (invokableCommand.toString() == "synth") {
+        const directoryPath = `${this.relativeCloudAssemblyLocation}
+        minifyDirectory(directoryPath)
+    }
+    return cdkout;
   };
 
   private populateCDKOutputFromStdout = async (
@@ -345,4 +350,37 @@ export class CDKDeployer implements BackendDeployer {
       }
     }
   };
+}
+
+// Function to minify JSON file content
+const minifyJSON = (filePath) => {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const jsonContent = JSON.parse(fileContent);  // Parse JSON
+    const minifiedContent = JSON.stringify(jsonContent);  // Minify JSON
+    fs.writeFileSync(filePath, minifiedContent);  // Overwrite the file
+};
+
+const minifyDirectory = (directoryPath) => {
+    // Read all files in the directory
+    fs.readdir(directoryPath, (err, files) => {
+        if (err) {
+            console.error('Unable to scan directory:', err);
+            return;
+        }
+        
+        // Loop through all files in the directory
+        files.forEach((file) => {
+            const filePath = join(directoryPath, file);
+            
+            // Check if the file is a JSON file
+            if (extname(file) === '.json') {
+                try {
+                    minifyJSON(filePath);
+                    console.log(`Minified: ${file}`);
+                } catch (err) {
+                    console.error(`Error minifying ${file}:`, err);
+                }
+            }
+        });
+    });
 }
